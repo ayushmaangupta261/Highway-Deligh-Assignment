@@ -5,13 +5,17 @@ import noteRoutes from "./routes/noteRoute";
 
 const app = express();
 
-// ✅ Add CORS
-app.use(cors({
-  origin: "*", // You can change "*" to your frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+// Enable CORS
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // Allow cookies
+  })
+);
 
+// Parse JSON requests
 app.use(express.json());
 
 // Routes

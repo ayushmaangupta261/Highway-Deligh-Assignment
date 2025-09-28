@@ -1,60 +1,297 @@
+// import { Request, Response } from "express";
+// import bcrypt from "bcryptjs";
+// import jwt from "jsonwebtoken";
+// import User from "../models/User";
+// import { generateOTP } from "../utils/generateOTP";
+// import { OAuth2Client } from "google-auth-library";
+
+// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// export const signup = async (req: Request, res: Response) => {
+//   try {
+//     const { name, email, password } = req.body;
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) return res.status(400).json({ message: "User already exists" });
+
+//     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+//     const user = await User.create({ name, email, password: hashedPassword });
+//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+//     res.json({ user, token });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// export const login = async (req: Request, res: Response) => {
+//   try {
+//     const { email, password } = req.body;
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(400).json({ message: "User not found" });
+
+//     if (!user.password) return res.status(400).json({ message: "Use Google login" });
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+
+//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+//     res.json({ user, token });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+//  export const googleLogin = async (req: Request, res: Response) => {
+// try {
+//   const { tokenId } = req.body;
+//   const ticket = await client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID });
+//   const payload = ticket.getPayload();
+//   if (!payload?.email) return res.status(400).json({ message: "Google login failed" });
+
+//   let user = await User.findOne({ email: payload.email });
+//   if (!user) {
+//     user = await User.create({ name: payload.name, email: payload.email, googleId: payload.sub });
+//   }
+
+//   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+//   res.json({ user, token });
+// } catch (err) {
+//   res.status(500).json({ message: "Server error" });
+// }
+// };
+
+
+
+
+
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import { generateOTP } from "../utils/generateOTP";
+import { sendEmail } from "../utils/sendEmail";
 import { OAuth2Client } from "google-auth-library";
+import { log } from "console";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-export const signup = async (req: Request, res: Response) => {
+// ----------------- OTP SIGNUP -----------------
+export const sendSignupOtp = async (req: Request, res: Response) => {
   try {
-    const { name, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    const { name, email, dob } = req.body; // Added dob
 
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-    const user = await User.create({ name, email, password: hashedPassword });
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
-    res.json({ user, token });
+    console.log("Received signup request for:", email);
+
+    if (!name || !email || !dob) {
+      return res.status(400).json(
+        {
+          message: "Name, email, and DOB are required",
+          sucess: false
+        });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      if (existingUser.isVerified) {
+        // User already verified
+        return res.status(400).json(
+          {
+            message: "User already exists",
+            sucess: false
+          });
+      } else {
+        // User exists but not verified → resend OTP
+        const otp = await generateOTP();
+        existingUser.otp = otp;
+        await existingUser.save();
+
+        console.log("Resending OTP to:", email);
+        await sendEmail(email, `Your OTP is ${otp}`);
+
+        return res.json(
+          {
+            message: "OTP resent to email",
+            userId: existingUser._id,
+            success: true
+          });
+      }
+    }
+
+    // New user → create and send OTP
+    const otp = await generateOTP();
+    console.log("Generated OTP:", otp);
+
+    const user = await User.create({
+      name,
+      email,
+      dob, // Save DOB
+      otp,
+      isVerified: false,
+    });
+
+    console.log("Sending email to:", email);
+    await sendEmail(email, `Your OTP is ${otp}`);
+
+    res.json({
+      message: "OTP sent to email",
+      userId: user._id,
+      success: true
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      success: false
+    });
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+
+export const verifySignupOtp = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, otp } = req.body;
+
+    console.log("Verifying signup OTP for:", email);
+
+
+    const user = await User.findOne({ email });
+
+    console.log("Verifying OTP for user:", email, "with OTP:", otp);
+
+
+    if (!user) return res.status(400).json({
+      message: "User not found",
+      success: false
+    });
+
+    if (user.otp !== otp) return res.status(400).json({
+      message: "Invalid OTP",
+      success: false
+    });
+
+    user.isVerified = true;
+    user.otp = undefined;
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
+    res.json({
+      message: "Signup successful",
+      user,
+      token,
+      success: true
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Server Error",
+      success: false
+    });
+  }
+};
+
+// ----------------- OTP LOGIN -----------------
+export const sendLoginOtp = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    console.log("Received login request for:", email);
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+        success: false
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({
+      message: "User not found",
+      success: false
+    });
+
+    if (!user.isVerified) {
+      return res.status(400).json({
+        message: "Please complete your signup before logging in",
+        success: false,
+      });
+    }
+
+    const otp = generateOTP();
+    user.otp = otp;
+    await user.save();
+
+    await sendEmail(email, `Your OTP is ${otp}`);
+
+    res.json({
+      message: "OTP sent to email",
+      userId: user._id,
+      success: true
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Server error",
+      success: false
+    });
+  }
+};
+
+export const verifyLoginOtp = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    if (!user.password) return res.status(400).json({ message: "Use Google login" });
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+        success: false
+      });
+    }
+    log("Login OTP verified for user:", email);
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+    user.otp = undefined;
+    await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
-    res.json({ user, token });
+    res.json({
+      message: "Login successful",
+      user,
+      token,
+      success: true
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      message: "Server error",
+      success: false
+    });
   }
 };
 
+// ----------------- GOOGLE LOGIN -----------------
 export const googleLogin = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.body;
-    const ticket = await client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID });
+
+    const ticket = await client.verifyIdToken({
+      idToken: tokenId,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
     const payload = ticket.getPayload();
     if (!payload?.email) return res.status(400).json({ message: "Google login failed" });
 
     let user = await User.findOne({ email: payload.email });
     if (!user) {
-      user = await User.create({ name: payload.name, email: payload.email, googleId: payload.sub });
+      user = await User.create({
+        name: payload.name,
+        email: payload.email,
+        googleId: payload.sub,
+        isVerified: true,
+      });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
     res.json({ user, token });
   } catch (err) {
+    console.error("Google login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
