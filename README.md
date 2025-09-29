@@ -6,6 +6,7 @@ Highway Delight is a **full-stack note-taking application** built with **React (
 [Live Frontend](https://highway-delight-assignment-frontend.onrender.com)
 
 
+
 ---
 
 ## Features
