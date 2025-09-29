@@ -8,7 +8,7 @@ const app = express();
 // Enable CORS
 app.use(
   cors({
-    origin: "https://highway-delight-assignment-frontend.onrender.com", // Frontend URL
+    origin: "https://ayushmaangupta261.github.io/Highway-Delight-Assignment/", // Frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Allow cookies
