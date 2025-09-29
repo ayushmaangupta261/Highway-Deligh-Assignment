@@ -1,11 +1,11 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import AuthPage from './pages/AuthPage';
+import {AuthPage} from './pages/AuthPage';
 import SplashScreen from './pages/SplashScreen';
 import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/Auth/ProtectedRoute';
-import UnProtectedRoute from './components/Auth/UnProtectedRoute';
-import Navbar from './components/Navigation/Navbar';
+import ProtectedRoute from './component/Auth/ProtectedRoute';
+import UnProtectedRoute from './component/Auth/UnProtectedRoute';
+import Navbar from './component/Navigation/Navbar';
 import { Toaster } from 'react-hot-toast';
 
 const App: React.FC = () => {
