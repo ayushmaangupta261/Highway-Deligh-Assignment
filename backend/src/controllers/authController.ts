@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 import { generateOTP } from "../utils/generateOTP";
 import { sendEmail } from "../utils/sendEmail";
 import { OAuth2Client } from "google-auth-library";
-import { log } from "console";
+import { otpEmailTemplate } from "../constant/otpEmailTemplate";
+import { loginSuccessTemplate } from "../constant/loginSucessTemplate";
+
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -40,8 +41,10 @@ export const sendSignupOtp = async (req: Request, res: Response) => {
         existingUser.otp = otp;
         await existingUser.save();
 
-        console.log("Resending OTP to:", email);
-        await sendEmail(email, `Your OTP is ${otp}`);
+        const mail = otpEmailTemplate(otp)
+        const subject = "OTP for Authentication"
+
+        await sendEmail(email, subject, mail);
 
         return res.json(
           {
@@ -64,8 +67,13 @@ export const sendSignupOtp = async (req: Request, res: Response) => {
       isVerified: false,
     });
 
-    console.log("Sending email to:", email);
-    await sendEmail(email, `Your OTP is ${otp}`);
+
+
+
+    const mail = otpEmailTemplate(otp)
+    const subject = "OTP for Authentication"
+
+    await sendEmail(email, subject, mail);
 
     res.json({
       message: "OTP sent to email",
@@ -109,6 +117,11 @@ export const verifySignupOtp = async (req: Request, res: Response) => {
     user.isVerified = true;
     user.otp = undefined;
     await user.save();
+
+    const mail = loginSuccessTemplate(user.name)
+    const subject = "Authenticated successfully"
+    await sendEmail(email, subject, mail);
+
 
     // return response with jwt token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
@@ -165,7 +178,9 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
 
 
     // send otp
-    await sendEmail(email, `Your OTP is ${otp}`);
+    const mail = otpEmailTemplate(otp)
+    const subject = "OTP for Authentication"
+    await sendEmail(email, subject, mail);
 
     // return response
     res.json({
@@ -200,6 +215,10 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
 
     user.otp = undefined;
     await user.save();
+
+    const mail = loginSuccessTemplate(user.name)
+    const subject = "Authenticated successfully"
+    await sendEmail(email, subject, mail);
 
     // allow user to login
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });

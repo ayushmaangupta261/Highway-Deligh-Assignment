@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Note, { INote } from "../models/Note";
 import User, { IUser } from "../models/User"; // assuming you have a User model
 import { sendEmail } from "../utils/sendEmail";
+import { noteSharedTemplate } from "../constant/noteSharedTemplate";
 
 interface AuthRequest extends Request {
   user?: IUser;
@@ -140,8 +141,9 @@ export const shareNote = async (req: AuthRequest, res: Response) => {
 
     if (emailList.length === 0) return res.status(400).json({ success: false, message: "No valid emails provided" });
 
+    
     // Find note
-    const note = await Note.findById(noteId);
+    const note = await Note.findById(noteId).populate<{ user: IUser }>('user');
     if (!note) return res.status(404).json({ success: false, message: "Note not found" });
 
     // Only owner can share
@@ -173,8 +175,12 @@ export const shareNote = async (req: AuthRequest, res: Response) => {
     }
 
     // Send emails
+
+    const mail = noteSharedTemplate((note?.user?.name as any), note?.title);
+
+    const subject = "A note is shared with you"
     for (const email of foundEmails) {
-      await sendEmail(email, `A note titled "${note.title}" has been shared with you.`);
+      await sendEmail(email, subject, mail);
     }
 
     res.json({
