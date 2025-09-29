@@ -1,13 +1,22 @@
 import { Router } from "express";
-import { createNote, getNotes, deleteNote } from "../controllers/noteController";
+import { createNote, getNotes, deleteNote, shareNote, editNote } from "../controllers/noteController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+
+import { rewriteMessage } from "../controllers/genAiController";
 
 const router = Router();
 
-router.use(authMiddleware);
 
-router.post("/", createNote);
-router.get("/", getNotes);
-router.delete("/:id", deleteNote);
+router.post("/create-note", authMiddleware, createNote);
+
+router.get("/get-notes", authMiddleware, getNotes);
+
+router.delete("/delete-note/:id", authMiddleware, deleteNote);
+
+router.put("/edit-note/:id", authMiddleware, editNote);
+
+router.post("/share-note/:id", authMiddleware, shareNote);
+
+router.post("/suggesstions", authMiddleware, rewriteMessage);
 
 export default router;

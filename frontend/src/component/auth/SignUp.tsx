@@ -40,7 +40,7 @@ const SignUp: React.FC = () => {
     }, [resendTimer]);
 
     const handleSendOtp = async () => {
-        const { name, email, dob } = watch(); // Get current values
+        const { name, email, dob } = watch(); //  current values
         if (!name || !email || !dob) {
             toast.error("Please fill all the details");
             return;
@@ -124,7 +124,7 @@ const SignUp: React.FC = () => {
 
                 {/* Send OTP / Resend OTP Button */}
                 {!otpSent && (
-                    <button type="button" onClick={handleSendOtp} className="w-full bg-[#367AFF] text-white py-2">
+                    <button type="button" onClick={handleSendOtp} className="w-full bg-[#367AFF] rounded-md text-white py-2">
                         Get OTP
                     </button>
                 )}
@@ -132,7 +132,7 @@ const SignUp: React.FC = () => {
                     <button
                         type="button"
                         onClick={handleSendOtp}
-                        className={`w-full py-2 ${resendTimer > 0 ? "bg-gray-400 cursor-not-allowed" : "bg-[#367AFF] text-white"
+                        className={`w-full rounded-md py-2 ${resendTimer > 0 ? "bg-gray-400 cursor-not-allowed" : "bg-[#367AFF] text-white"
                             }`}
                         disabled={resendTimer > 0}
                     >
@@ -160,7 +160,7 @@ const SignUp: React.FC = () => {
 
                 {/* Submit */}
                 {otpSent && (
-                    <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
+                    <button type="submit" className="w-full rounded-md bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
                         Sign Up
                     </button>
                 )}

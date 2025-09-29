@@ -1,68 +1,3 @@
-// import { Request, Response } from "express";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-// import User from "../models/User";
-// import { generateOTP } from "../utils/generateOTP";
-// import { OAuth2Client } from "google-auth-library";
-
-// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-// export const signup = async (req: Request, res: Response) => {
-//   try {
-//     const { name, email, password } = req.body;
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) return res.status(400).json({ message: "User already exists" });
-
-//     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
-//     const user = await User.create({ name, email, password: hashedPassword });
-//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
-//     res.json({ user, token });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// export const login = async (req: Request, res: Response) => {
-//   try {
-//     const { email, password } = req.body;
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(400).json({ message: "User not found" });
-
-//     if (!user.password) return res.status(400).json({ message: "Use Google login" });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(400).json({ message: "Invalid password" });
-
-//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
-//     res.json({ user, token });
-//   } catch (err) {
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-//  export const googleLogin = async (req: Request, res: Response) => {
-// try {
-//   const { tokenId } = req.body;
-//   const ticket = await client.verifyIdToken({ idToken: tokenId, audience: process.env.GOOGLE_CLIENT_ID });
-//   const payload = ticket.getPayload();
-//   if (!payload?.email) return res.status(400).json({ message: "Google login failed" });
-
-//   let user = await User.findOne({ email: payload.email });
-//   if (!user) {
-//     user = await User.create({ name: payload.name, email: payload.email, googleId: payload.sub });
-//   }
-
-//   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
-//   res.json({ user, token });
-// } catch (err) {
-//   res.status(500).json({ message: "Server error" });
-// }
-// };
-
-
-
-
-
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -74,10 +9,10 @@ import { log } from "console";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// ----------------- OTP SIGNUP -----------------
+// otp signup section 
 export const sendSignupOtp = async (req: Request, res: Response) => {
   try {
-    const { name, email, dob } = req.body; // Added dob
+    const { name, email, dob } = req.body;
 
     console.log("Received signup request for:", email);
 
@@ -124,7 +59,7 @@ export const sendSignupOtp = async (req: Request, res: Response) => {
     const user = await User.create({
       name,
       email,
-      dob, // Save DOB
+      dob,
       otp,
       isVerified: false,
     });
@@ -158,20 +93,24 @@ export const verifySignupOtp = async (req: Request, res: Response) => {
     console.log("Verifying OTP for user:", email, "with OTP:", otp);
 
 
+    // not registered
     if (!user) return res.status(400).json({
       message: "User not found",
       success: false
     });
 
+    // check the otp
     if (user.otp !== otp) return res.status(400).json({
       message: "Invalid OTP",
       success: false
     });
 
+    // verify and save the user
     user.isVerified = true;
     user.otp = undefined;
     await user.save();
 
+    // return response with jwt token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
     res.json({
       message: "Signup successful",
@@ -187,12 +126,14 @@ export const verifySignupOtp = async (req: Request, res: Response) => {
   }
 };
 
-// ----------------- OTP LOGIN -----------------
+
+// otp login section
 export const sendLoginOtp = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
 
     console.log("Received login request for:", email);
+
 
     if (!email) {
       return res.status(400).json({
@@ -202,11 +143,14 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
     }
 
     const user = await User.findOne({ email });
+
+    // user not registered
     if (!user) return res.status(400).json({
       message: "User not found",
       success: false
     });
 
+    // user is not verified
     if (!user.isVerified) {
       return res.status(400).json({
         message: "Please complete your signup before logging in",
@@ -214,18 +158,24 @@ export const sendLoginOtp = async (req: Request, res: Response) => {
       });
     }
 
+    // generate otp 
     const otp = generateOTP();
     user.otp = otp;
     await user.save();
 
+
+    // send otp
     await sendEmail(email, `Your OTP is ${otp}`);
 
+    // return response
     res.json({
       message: "OTP sent to email",
       userId: user._id,
       success: true
     });
   } catch (err) {
+    console.log("Error -> ", err);
+
     res.status(500).json({
       message: "Server error",
       success: false
@@ -239,17 +189,19 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
+    // return if otp doesnt mathces
     if (user.otp !== otp) {
       return res.status(400).json({
         message: "Invalid OTP",
         success: false
       });
     }
-    log("Login OTP verified for user:", email);
+
 
     user.otp = undefined;
     await user.save();
 
+    // allow user to login
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET!, { expiresIn: "7d" });
     res.json({
       message: "Login successful",
@@ -265,7 +217,7 @@ export const verifyLoginOtp = async (req: Request, res: Response) => {
   }
 };
 
-// ----------------- GOOGLE LOGIN -----------------
+// google login section
 export const googleLogin = async (req: Request, res: Response) => {
   try {
     const { tokenId } = req.body;

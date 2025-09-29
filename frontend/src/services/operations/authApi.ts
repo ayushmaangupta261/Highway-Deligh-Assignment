@@ -1,11 +1,9 @@
 import { apiConnector } from "../apiconnector";
 import { authEndpoint } from "../endpoints/authEndpoints";
 import toast from "react-hot-toast";
-import { AppDispatch } from "../../redux/store/store";
-import { setCredentials } from "../../redux/slices/authSlice";
-import { log } from "console";
+import { logout } from "../../redux/slices/authSlice";
 
-const { send_signup_otp, verify_signup_otp, send_login_otp, verify_login_otp } = authEndpoint;
+const { send_signup_otp, verify_signup_otp, send_login_otp, verify_login_otp, google_login_api } = authEndpoint;
 
 interface SignupData {
     name: string;
@@ -51,7 +49,7 @@ export const sendSignUpOtp = async (data: SignupData) => {
     } catch (error: any) {
         console.error("Error sending signup OTP ->", error);
         toast.error(error.response.data.message || "Something went wrong", { id: loadingToastId }); // update toast to error
-        throw error; // rethrow if you want to handle it later
+        return;
     }
 };
 
@@ -80,11 +78,9 @@ export const verifySignupOtp = async (data: SignupVerifyData) => {
     } catch (error: any) {
         console.error("Error verifying signup OTP ->", error);
         toast.error(error.message || "Something went wrong", { id: loadingToastId });
-        throw error;
+        return;
     }
 };
-
-
 
 
 interface LoginData {
@@ -114,8 +110,8 @@ export const sendLoginOtp = async (data: LoginData) => {
         return response;
     } catch (error: any) {
         console.error("Error sending login OTP ->", error);
-        toast.error(error.message || "Something went wrong", { id: loadingToastId }); // update toast to error
-        throw error;
+        toast.error(error.response.message || "Something went wrong", { id: loadingToastId }); // update toast to error
+        return;
     }
 };
 
@@ -139,6 +135,45 @@ export const verifyLoginOtp = async (data: LoginVerifyData) => {
         return response;
     } catch (error: any) {
         toast.error(error.message || "Something went wrong", { id: loadingToastId });
+        return;
+    }
+};
+
+
+export const logOutUser = (dispatch: any) => {
+    const loadingToastId = toast.loading("Logging Out");
+    try {
+        dispatch(logout()); // dispatching the logout action
+        toast.success("Logged Out Successfully", { id: loadingToastId });
+        return;
+    } catch (error) {
+        toast.error("Log Out Error", { id: loadingToastId });
+        console.error("Logout error:", error);
+        return;
+    }
+};
+
+
+
+interface GoogleLoginData {
+    tokenId: string;
+}
+
+export const googleLogin = async (data: GoogleLoginData) => {
+    const loadingToastId = toast.loading("Logging in with Google...");
+    try {
+        const { tokenId } = data;
+        if (!tokenId) throw new Error("Google token is missing");
+
+        //  backend API
+        const response = await apiConnector("POST", google_login_api, { tokenId });
+        if (response.success === false) throw new Error(response.message || "Google login failed");
+
+        toast.success("Login successful!", { id: loadingToastId });
+        return response; // { user, token }
+    } catch (error: any) {
+        toast.error(error.message || "Something went wrong", { id: loadingToastId });
         throw error;
     }
 };
+

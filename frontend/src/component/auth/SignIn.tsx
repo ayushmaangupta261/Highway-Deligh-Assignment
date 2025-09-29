@@ -110,7 +110,7 @@ const SignIn: React.FC = () => {
           <button
             type="button"
             onClick={handleSendOtp}
-            className="text-sm text-[#367AFF] cursor-pointer w-[4rem]"
+            className="text-sm text-[#367AFF]  cursor-pointer w-[4rem] ml-1"
           >
             Send OTP
           </button>
@@ -150,6 +150,7 @@ const SignIn: React.FC = () => {
             <div className="flex items-center gap-2 mt-2">
               <input
                 type="checkbox"
+                defaultChecked={true}
                 {...register("keepMeLoggedIn")}
                 className="h-4 w-4 border-[#9A9A9A] text-[#367AFF] focus:ring-[#367AFF]"
               />
@@ -163,6 +164,8 @@ const SignIn: React.FC = () => {
             >
               Sign In
             </button>
+
+            
           </>
         )}
       </form>

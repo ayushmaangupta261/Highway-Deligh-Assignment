@@ -9,4 +9,6 @@ export const authEndpoint = {
     verify_signup_otp : BASE_URL + "/api/auth/signup",
     send_login_otp : BASE_URL + "/api/auth/send-login-otp",
     verify_login_otp : BASE_URL + "/api/auth/login",
+
+    google_login_api: BASE_URL+"/api/auth/google-login"
 };
