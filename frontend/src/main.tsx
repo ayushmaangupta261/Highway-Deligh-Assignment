@@ -14,7 +14,7 @@ const rootElement = document.getElementById('root')!;
 const root = createRoot(rootElement);
 
 root.render(
-  <BrowserRouter >
+  <BrowserRouter basename="/Highway-Delight-Assignment">
     <Provider store={store}>
       <GoogleOAuthProvider clientId={clientId}>
         <App />
