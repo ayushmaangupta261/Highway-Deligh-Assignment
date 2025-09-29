@@ -5,7 +5,7 @@ import path from 'path';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Highway-Delight-Assignment/', 
+  // base: '/Highway-Delight-Assignment', 
   server: {
     port: 3000,
     host: true

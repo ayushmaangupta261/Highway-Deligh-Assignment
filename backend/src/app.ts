@@ -9,6 +9,7 @@ const app = express();
 const allowedOrigins = [
   "https://ayushmaangupta261.github.io", 
   "https://ayushmaangupta261.github.io/Highway-Delight-Assignment", 
+  "http://localhost:3000"
 ];
 
 // Enable CORS

@@ -147,7 +147,7 @@ export const shareNote = async (req: AuthRequest, res: Response) => {
     if (!note) return res.status(404).json({ success: false, message: "Note not found" });
 
     // Only owner can share
-    if (note.user.toString() !== req.user!._id.toString()) {
+    if (note.user._id.toString() !== req.user!._id.toString()) {
       return res.status(403).json({ success: false, message: "Not authorized to share this note" });
     }
 
