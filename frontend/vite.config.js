@@ -11,7 +11,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@component': path.resolve(__dirname, './src/component') 
+      '@component': path.resolve(__dirname, './src/component') // points to your component folder
     }
   }
 });

@@ -3,8 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import {AuthPage} from './pages/AuthPage';
 import SplashScreen from './pages/SplashScreen';
 import Dashboard from './pages/Dashboard';
-import ProtectedRoute from '@component/Auth/ProtectedRoute.tsx';
-import UnProtectedRoute from '@component/Auth/UnProtectedRoute.tsx';
+import ProtectedRoute from '@component/Auth/ProtectedRoute';
+import UnProtectedRoute from '@component/Auth/UnProtectedRoute';
 
 
 import Navbar from './component/Navigation/Navbar';
