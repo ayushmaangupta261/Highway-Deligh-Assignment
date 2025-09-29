@@ -3,7 +3,7 @@
 Highway Delight is a **full-stack note-taking application** built with **React (TypeScript), Node.js (TypeScript), and MongoDB**. The app allows users to sign up using **email & OTP** or **Google OAuth**, manage notes, and ensures secure authentication with JWT.
 
 
-[Live Frontend](https://highway-delight-assignment-frontend.onrender.com)
+[Live Frontend](https://ayushmaangupta261.github.io/Highway-Delight-Assignment/)
 
 
 
