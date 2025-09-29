@@ -5,13 +5,27 @@ import noteRoutes from "./routes/noteRoute";
 
 const app = express();
 
+// Allowed origins
+const allowedOrigins = [
+  "https://ayushmaangupta261.github.io", 
+  "https://ayushmaangupta261.github.io/Highway-Delight-Assignment", 
+];
+
 // Enable CORS
 app.use(
   cors({
-    origin: "https://ayushmaangupta261.github.io/Highway-Delight-Assignment/", // Frontend URL
+    origin: function (origin, callback) {
+      // allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Allow cookies
+    credentials: true, // allow cookies
   })
 );
 

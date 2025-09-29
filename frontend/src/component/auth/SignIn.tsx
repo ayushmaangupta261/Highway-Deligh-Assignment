@@ -110,7 +110,7 @@ const SignIn: React.FC = () => {
           <button
             type="button"
             onClick={handleSendOtp}
-            className="text-sm text-[#367AFF]  cursor-pointer w-[4rem] ml-1"
+            className="text-xs md:text-sm text-[#367AFF]  cursor-pointer w-[4rem] ml-1"
           >
             Send OTP
           </button>
